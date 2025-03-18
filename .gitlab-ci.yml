@@ -1,0 +1,57 @@
+stages:
+  - build
+  - style
+  - test
+  - deploy
+  - notify
+
+build-job:
+  stage: build
+  tags:
+    - build
+  script:
+    - make -C src/simple_bash/cat/
+    - make -C src/simple_bash/grep/
+  artifacts:
+    paths:
+      - src/simple_bash/cat/*.o
+      - src/simple_bash/cat/s21_cat
+      - src/simple_bash/grep/*.o
+      - src/simple_bash/grep/s21_grep
+    expire_in: "30 days"
+
+style-job:
+  stage: style
+  tags:
+    - style
+  script:
+    - printenv
+    - clang-format -style=Google --Werror -n src/simple_bash/cat/*.h src/simple_bash/cat/*.c
+    - clang-format -style=Google --Werror -n src/simple_bash/grep/*.h src/simple_bash/grep/*.c
+
+test-job:
+  stage: test
+  tags:
+    - test
+  when: on_success
+  script:
+    - printenv
+    - make test -C src/simple_bash/cat/
+    - make test -C src/simple_bash/grep/
+
+deploy-job:
+  stage: deploy
+  tags:
+    - deploy
+  when: on_success
+  script:
+    - chmod +x src/copy_artifacts.sh
+    - sh src/copy_artifacts.sh
+
+notify-job:
+  stage: notify
+  tags:
+    - notify
+  script:
+    - echo "Compiling the code..."
+    - echo "Compile complete."
